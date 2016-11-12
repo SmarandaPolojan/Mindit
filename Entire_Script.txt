@@ -304,6 +304,7 @@ GO
 truncate table [Promotion Application].[dbo].[PA_ITEM];
 
  with available_items as (select distinct [ITEM_ID]  FROM [Pricing Application].[dbo].[PR_PRICE])
+ insert into [Promotion Application].[dbo].[PA_ITEM]
  select x.[ITEM_ID]
       ,[ITEM_NAME]
       ,[ITEM_DESCRIPTON]
