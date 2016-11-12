@@ -1,0 +1,29 @@
+-- this section is for creating a nonclustered index on ITEM_ID column on the Pricing Application].[dbo].[PR_PRICE] table
+-- this does not need and should not be reused every time the table PA_Item is populated with external data, only once - after the [Pricing Application].[dbo].[PR_PRICE] is created
+use [Pricing Application];
+GO
+
+IF EXISTS (SELECT name FROM sys.indexes  
+            WHERE name = N'IX_NC_PR_PRICE_ITEM_IS')   
+    DROP INDEX IX_ProductVendor_VendorID ON Purchasing.ProductVendor;   
+GO 
+CREATE NONCLUSTERED INDEX IX_NC_PR_PRICE_ITEM_IS   
+    ON [Pricing Application].[dbo].[PR_PRICE] ([ITEM_ID]);   
+GO  
+
+-- in this section I wrote the query for the actual data transfer - I used an inner join to ensure that the items transfered are present in both external databases
+-- this section is part of automated refresh process
+-- for the data that I generated only 7500 rows are available as designed when creating the random ITEM IDs. 
+-- in the Item Catalogue DB there are 10k itmes with ID range 1 to 10000 and in the Pricing Application DB there are 100k distinct items with ID range from 2501 to 102500
+USE [master]
+GO
+
+truncate table [Promotion Application].[dbo].[PA_ITEM];
+
+ with available_items as (select distinct [ITEM_ID]  FROM [Pricing Application].[dbo].[PR_PRICE])
+ select x.[ITEM_ID]
+      ,[ITEM_NAME]
+      ,[ITEM_DESCRIPTON]
+      ,[BRAND_ID]
+      ,[CATEGORY_ID]
+  FROM [Item Catalogue].[dbo].[IC_ITEM] x inner join available_items on x.[ITEM_ID]=available_items.[ITEM_ID];
