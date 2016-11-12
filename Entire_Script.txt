@@ -1,0 +1,226 @@
+
+-- CREATE FIRST DATABASE: PROMOTION APPLICATION
+
+USE [master]
+GO
+
+if exists (SELECT name FROM master.sys.databases where name=N'Promotion Application') drop database [Promotion Application];
+GO
+
+CREATE DATABASE [Promotion Application];
+GO
+
+USE [Promotion Application]
+GO
+
+-- CREATE TABLE PA_ITEM IN PROMOTION APPLICATION DATABASE
+
+IF OBJECT_ID(N'dbo.PA_ITEM', N'U') IS NOT NULL drop table dbo.[PA_ITEM];
+GO
+
+CREATE TABLE dbo.[PA_ITEM](
+	ITEM_ID int NOT NULL,
+	ITEM_NAME varchar (100) NOT NULL, 
+	ITEM_DESCRIPTON varchar (1000) NOT NULL, 
+	BRAND_ID int NOT NULL,
+	CATEGORY_ID int NOT NULL,
+	
+    CONSTRAINT [PK_PA_ITEM_ITEM_ID] PRIMARY KEY (ITEM_ID),
+	CONSTRAINT [UC_PA_ITEM_ITEM_NAME] UNIQUE (ITEM_NAME)
+	);
+
+
+
+-- CREATE SECOND DATABASE: ITEM CATALOGUE
+
+USE [master]
+GO
+
+if exists (SELECT name FROM master.sys.databases where name=N'Item Catalogue') drop database [Item Catalogue];
+GO
+
+CREATE DATABASE [Item Catalogue];
+GO
+
+USE [Item Catalogue]
+GO
+
+-- CREATE TABLE IC_CATAGORY IN ITEM CATALOGUE DATABASE
+
+IF OBJECT_ID(N'dbo.IC_CATAGORY', N'U') IS NOT NULL drop table dbo.[IC_CATAGORY];
+GO
+
+CREATE TABLE dbo.[IC_CATAGORY](
+	CATEGORY_ID int NOT NULL,
+	CATEGORY_NAME varchar (100) NOT NULL, 
+	CATEGORY_DESC varchar (1000) NULL, 
+
+    CONSTRAINT [PK_IC_CATAGORY_ITEM_ID] PRIMARY KEY (CATEGORY_ID),
+	CONSTRAINT [UC_IC_CATAGORY_ITEM_NAME] UNIQUE (CATEGORY_NAME)
+	);
+
+-- CREATE TABLE IC_BRAND IN ITEM CATALOGUE DATABASE
+
+IF OBJECT_ID(N'dbo.IC_BRAND', N'U') IS NOT NULL drop table dbo.[IC_BRAND];
+GO
+
+CREATE TABLE dbo.[IC_BRAND](
+	BRAND_ID int NOT NULL,
+	BRAND_NAME varchar (100) NOT NULL, 
+	BRAND_DESC varchar (1000) NULL, 
+
+    CONSTRAINT [PK_IC_BRAND_ITEM_ID] PRIMARY KEY (BRAND_ID),
+	CONSTRAINT [UC_IC_BRAND_ITEM_NAME] UNIQUE (BRAND_NAME)
+	);
+
+-- CREATE TABLE IC_BRAND IN ITEM CATALOGUE DATABASE
+
+IF OBJECT_ID(N'dbo.IC_ITEM', N'U') IS NOT NULL drop table dbo.[IC_ITEM];
+GO
+
+CREATE TABLE dbo.[IC_ITEM](
+	ITEM_ID int NOT NULL,
+	ITEM_NAME varchar (100) NOT NULL, 
+	ITEM_DESCRIPTON varchar (1000) NOT NULL, 
+	BRAND_ID int NOT NULL,
+	CATEGORY_ID int NOT NULL,
+	
+    CONSTRAINT [PK_IC_ITEM_ITEM_ID] PRIMARY KEY (ITEM_ID),
+	CONSTRAINT [UC_IC_ITEM_ITEM_NAME] UNIQUE (ITEM_NAME)
+	);
+
+-- CREATE THIRD DATABASE: PRICING APPLICATION
+
+USE [master]
+GO
+
+if exists (SELECT name FROM master.sys.databases where name=N'Pricing Application') drop database [Pricing Application];
+GO
+
+CREATE DATABASE [Pricing Application];
+GO
+
+USE [Pricing Application]
+GO
+
+-- CREATE TABLE PA_ITEM IN PRICING APPLICATION DATABASE
+
+IF OBJECT_ID(N'dbo.PR_PRICE', N'U') IS NOT NULL drop table dbo.[PR_PRICE];
+GO
+
+CREATE TABLE dbo.[PR_PRICE](
+	ITEM_ID int NOT NULL,
+	PRICE_DATE varchar (100) NOT NULL, 
+	PRICE_VALUE varchar (1000) NOT NULL, 
+	
+    CONSTRAINT [PK_PR_PRICE_ITEM_ID_PRICE_ID] PRIMARY KEY (ITEM_ID,PRICE_DATE)
+	);
+
+
+-- GO BACK TO MASTER TO UNLOCK PRICING APPLICATION DATABASE USAGE
+USE MASTER
+GO
+
+USE [Item Catalogue]
+GO
+
+-- INSERT 5 RANDOM DISTINCT CATEGORIES INTO [Item Catalogue].[dbo].[IC_CATAGORY]
+-- for the random generated values I used a CTE algorithm with an had-coded initial data table and a series of cross joins meant to multiply the data 4 rows -> then 16 rows > then 16*16 rows and so on.
+-- in the final RANDOMTABLE_FINAL I have two columns: one with varchar type data and one with integers, generated with the row_number function.
+-- altough the first table needs only 5 rows and does not require an algorith to generate, I prefered this method as I can more easily align the random generated data.
+
+TRUNCATE TABLE [dbo].[IC_CATAGORY];
+GO
+
+WITH  RANDOMTABLE_0 AS ( SELECT RANDOM_COLUMN FROM (VALUES ( 'A'),('B'),('C'),('D')) AS T (RANDOM_COLUMN)),
+      RANDOMTABLE_1 AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN  FROM RANDOMTABLE_0 A CROSS JOIN RANDOMTABLE_0 B ),
+	  RANDOMTABLE_2 AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN  FROM RANDOMTABLE_1 A CROSS JOIN RANDOMTABLE_1 B ),
+	  RANDOMTABLE_FINAL AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN_VARCHAR,
+	                                ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS RANDOM_COLUMN_NUM 
+							  FROM RANDOMTABLE_2 A CROSS JOIN RANDOMTABLE_2 B )
+ 
+ insert into [dbo].[IC_CATAGORY]
+ SELECT TOP 5
+ RANDOM_COLUMN_NUM*10 +2 AS [CATEGORY_ID], -- i used this calculation to create a pattern for the CategoryID that I will use in the future also.
+ CONCAT('Category ',RANDOM_COLUMN_VARCHAR) AS [CATEGORY_NAME],
+ CONCAT('Category Description ',RANDOM_COLUMN_VARCHAR,RANDOM_COLUMN_VARCHAR) AS [CATEGORY_DESC]
+ 
+ FROM RANDOMTABLE_FINAL 
+ ORDER BY RANDOM_COLUMN_NUM;
+
+
+ -- INSERT 10 RANDOM DISTINCT BRANDS INTO [Item Catalogue].[dbo].[IC_BRAND]
+TRUNCATE TABLE [dbo].[IC_BRAND];
+GO
+
+WITH  RANDOMTABLE_0 AS ( SELECT RANDOM_COLUMN FROM (VALUES ( 'A'),('B'),('C'),('D')) AS T (RANDOM_COLUMN)),
+      RANDOMTABLE_1 AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN  FROM RANDOMTABLE_0 A CROSS JOIN RANDOMTABLE_0 B ),
+	  RANDOMTABLE_2 AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN  FROM RANDOMTABLE_1 A CROSS JOIN RANDOMTABLE_1 B ),
+	  RANDOMTABLE_FINAL AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN_VARCHAR,
+	                                ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS RANDOM_COLUMN_NUM 
+							  FROM RANDOMTABLE_2 A CROSS JOIN RANDOMTABLE_2 B )
+ 
+ insert into [dbo].[IC_BRAND]
+ SELECT TOP 10
+ RANDOM_COLUMN_NUM*1000 +5 AS [BRAND_ID], -- i used this calculation to create a pattern for the BrandID that I will use in the future also and does not have simmilar values as the CategoryID
+ CONCAT('Brand ',RANDOM_COLUMN_VARCHAR) AS [BRAND_NAME],
+ CONCAT('Brand Description ',RANDOM_COLUMN_VARCHAR,RANDOM_COLUMN_VARCHAR) AS [BRAND_DESC]
+ 
+ FROM RANDOMTABLE_FINAL 
+ ORDER BY RANDOM_COLUMN_NUM;
+
+
+ -- INSERT 10000 RANDOM DISTINCT Items INTO [Item Catalogue].[dbo].[IC_ITEM]
+  -- the calculations for brand id and category were applied in order to match the values generated in the respective tables for Brand ID and Category ID 
+TRUNCATE TABLE [dbo].[IC_ITEM];
+GO
+
+WITH  RANDOMTABLE_0 AS ( SELECT RANDOM_COLUMN FROM (VALUES ( 'A'),('B'),('C'),('D')) AS T (RANDOM_COLUMN)),
+      RANDOMTABLE_1 AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN  FROM RANDOMTABLE_0 A CROSS JOIN RANDOMTABLE_0 B ),
+	  RANDOMTABLE_2 AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN  FROM RANDOMTABLE_1 A CROSS JOIN RANDOMTABLE_1 B ),
+	  RANDOMTABLE_FINAL AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN_VARCHAR,
+	                                ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS RANDOM_COLUMN_NUM 
+							  FROM RANDOMTABLE_2 A CROSS JOIN RANDOMTABLE_2 B )
+ 
+ insert into [dbo].[IC_ITEM]
+ SELECT TOP 10000
+ RANDOM_COLUMN_NUM AS [ITEM_ID],
+ CONCAT('Item ',RANDOM_COLUMN_VARCHAR) AS [CATEGORY_NAME],
+ CONCAT('Item Description ',RANDOM_COLUMN_VARCHAR,RANDOM_COLUMN_VARCHAR) AS [CATEGORY_DESC],
+ (RANDOM_COLUMN_NUM%10)*1000+1005 as [BRAND_ID], -- this formula ensures that all the BrandIDs generated all valid and also found in IC_Brand Table. A foreign key was not required, but the option of implementing one is still valid without data loss
+ ((RANDOM_COLUMN_NUM)%5)*10+12 as [CATEGORY_ID] -- same comment as for the BrandID
+ 
+ FROM RANDOMTABLE_FINAL 
+ ORDER BY RANDOM_COLUMN_NUM;
+
+-- insert 100000 distinct items with 10 distinct dates = a total of 1M rows into  [Pricing Application].[dbo].[PR_PRICE]
+-- (each item will have a different price for a different date, thus 10 prices for each item) 
+-- for this task I needed to change the seed lenght and add another level in the random generator as it did not previosly had 100k distinct rows, also I no longer needed a randomly generated varchar column
+-- it was faster performance wise to generate in CTEs the distinct items and distinct dates and cross join them aftwerwards than to generate 1M unique rows from the start. 
+USE [Pricing Application]
+GO
+
+TRUNCATE TABLE [dbo].[PR_PRICE];
+GO
+
+WITH  RANDOMTABLE_0 AS ( SELECT RANDOM_COLUMN FROM (VALUES (1),(1),(1)) AS T (RANDOM_COLUMN)),
+      RANDOMTABLE_1 AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN  FROM RANDOMTABLE_0 A CROSS JOIN RANDOMTABLE_0 B ),
+	  RANDOMTABLE_2 AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN  FROM RANDOMTABLE_1 A CROSS JOIN RANDOMTABLE_1 B ),
+	  RANDOMTABLE_3 AS ( SELECT CONCAT(A.RANDOM_COLUMN, B.RANDOM_COLUMN) AS RANDOM_COLUMN  FROM RANDOMTABLE_2 A CROSS JOIN RANDOMTABLE_2 B ), 
+	  RANDOMTABLE_FINAL AS ( SELECT ROW_NUMBER() OVER(ORDER BY (SELECT NULL)) AS RANDOM_COLUMN_NUM  FROM RANDOMTABLE_3 A CROSS JOIN RANDOMTABLE_3 B ),
+	  DISTINCT_ITEMS AS ( SELECT TOP 100000 RANDOM_COLUMN_NUM + 2500 AS [ITEM_ID] FROM RANDOMTABLE_FINAL ORDER BY RANDOM_COLUMN_NUM),
+	  DISTINCT_DATES AS ( SELECT TOP 10	 CONVERT (VARCHAR, CONVERT (date,DATEADD(mm, -RANDOM_COLUMN_NUM, CURRENT_TIMESTAMP))) AS [PRICE_DATE] FROM RANDOMTABLE_FINAL  ORDER BY RANDOM_COLUMN_NUM)
+
+	  INSERT INTO [dbo].[PR_PRICE]
+	  SELECT [ITEM_ID], 
+	        [PRICE_DATE],
+			CONCAT(LEFT([ITEM_ID],2), SUBSTRING([PRICE_DATE], 6,2)) AS [PRICE_VALUE] -- this formula ensures that the price will change if the date is different as the last 2 digits of the price represent the month of the date.
+	  FROM DISTINCT_ITEMS CROSS JOIN DISTINCT_DATES;
+
+ 
+-- GO BACK TO MASTER TO UNLOCK PRICING APPLICATION DATABASE USAGE
+USE MASTER
+GO     
+
+;
+
