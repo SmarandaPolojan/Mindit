@@ -1,0 +1,58 @@
+USE [Promotion Application]
+GO
+
+-- CREATE TABLE IC_CATAGORY IN Promotion Application DATABASE - to preserve data definition and constrains
+-- this script can be generated automatically from the Item Catalogue Database-> tasks -> generate script option 
+-- I reused the earlier script in order to avoind script clutterig 
+-- if this replication is done on a regular basis and the table structure does not change then this script should be run only once, at the beginning.
+IF OBJECT_ID(N'dbo.IC_CATAGORY', N'U') IS NOT NULL drop table dbo.[IC_CATAGORY];
+GO
+
+CREATE TABLE dbo.[IC_CATAGORY](
+	CATEGORY_ID int NOT NULL,
+	CATEGORY_NAME varchar (100) NOT NULL, 
+	CATEGORY_DESC varchar (1000) NULL, 
+
+    CONSTRAINT [PK_IC_CATAGORY_ITEM_ID] PRIMARY KEY (CATEGORY_ID),
+	CONSTRAINT [UC_IC_CATAGORY_ITEM_NAME] UNIQUE (CATEGORY_NAME)
+	);
+
+-- CREATE TABLE IC_BRAND IN Promotion Application DATABASE
+
+IF OBJECT_ID(N'dbo.IC_BRAND', N'U') IS NOT NULL drop table dbo.[IC_BRAND];
+GO
+
+CREATE TABLE dbo.[IC_BRAND](
+	BRAND_ID int NOT NULL,
+	BRAND_NAME varchar (100) NOT NULL, 
+	BRAND_DESC varchar (1000) NULL, 
+
+    CONSTRAINT [PK_IC_BRAND_ITEM_ID] PRIMARY KEY (BRAND_ID),
+	CONSTRAINT [UC_IC_BRAND_ITEM_NAME] UNIQUE (BRAND_NAME)
+	);
+
+-- return to master db in order to create the cross database queries
+-- if the databases were in different servers I would use linked servers to obtain the desired result.
+-- if this project were created using SSIS I would not need linked servers, but I would create a 2-step data flow with 2 connections ( source and destination). 
+-- if this replication is done on a regular basis and the table structure does not change then this script can be used everytime to automate the process
+USE [master]
+GO
+
+-- insert data [IC_CATAGORY] from [Item Catalogue] to [Pricing Application]
+truncate table [Promotion Application].dbo.[IC_CATAGORY];
+
+insert into [Promotion Application].dbo.[IC_CATAGORY]
+select [CATEGORY_ID]
+      ,[CATEGORY_NAME]
+      ,[CATEGORY_DESC]
+from [Item Catalogue].dbo.[IC_CATAGORY];
+
+-- insert data [IC_BRAND] from [Item Catalogue] to [Pricing Application]
+truncate table [Promotion Application].dbo.[IC_BRAND];
+
+insert into [Promotion Application].dbo.[IC_BRAND]
+select [BRAND_ID]
+      ,[BRAND_NAME]
+      ,[BRAND_DESC]
+from [Item Catalogue].dbo.[IC_BRAND];
+
