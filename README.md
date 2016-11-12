@@ -1,0 +1,2 @@
+# Mindit
+Mindit Interview Exercises
